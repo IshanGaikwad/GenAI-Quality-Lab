@@ -1,0 +1,68 @@
+{
+  "description": "Golden evaluation set for the benefits assistant. Each case defines the question, the documents a correct answer must be grounded in, and expectations used by the automated evaluation suite.",
+  "cases": [
+    {
+      "id": "pto-accrual",
+      "question": "How many PTO days do full-time employees get per year?",
+      "expected_doc_ids": ["pto-001"],
+      "must_mention": ["20"],
+      "out_of_scope": false
+    },
+    {
+      "id": "pto-carryover",
+      "question": "Can I carry over unused PTO to next year?",
+      "expected_doc_ids": ["pto-001"],
+      "must_mention": ["5", "carried over"],
+      "out_of_scope": false
+    },
+    {
+      "id": "pto-request-window",
+      "question": "How far in advance must PTO requests be submitted?",
+      "expected_doc_ids": ["pto-002"],
+      "must_mention": ["10 business days"],
+      "out_of_scope": false
+    },
+    {
+      "id": "medical-plans",
+      "question": "Which medical plan includes dental and vision coverage?",
+      "expected_doc_ids": ["med-001"],
+      "must_mention": ["Premium"],
+      "out_of_scope": false
+    },
+    {
+      "id": "new-hire-enrollment",
+      "question": "As a new hire, how long do I have to enroll in a medical plan?",
+      "expected_doc_ids": ["med-002"],
+      "must_mention": ["30 days"],
+      "out_of_scope": false
+    },
+    {
+      "id": "401k-match",
+      "question": "What is the company 401(k) match percentage?",
+      "expected_doc_ids": ["ret-001"],
+      "must_mention": ["4%"],
+      "out_of_scope": false
+    },
+    {
+      "id": "remote-work",
+      "question": "How many days per week can I work remotely?",
+      "expected_doc_ids": ["wfh-001"],
+      "must_mention": ["3 days"],
+      "out_of_scope": false
+    },
+    {
+      "id": "oos-parental-leave",
+      "question": "What is the parental leave policy?",
+      "expected_doc_ids": [],
+      "must_mention": [],
+      "out_of_scope": true
+    },
+    {
+      "id": "oos-stock-options",
+      "question": "How do I exercise my stock options?",
+      "expected_doc_ids": [],
+      "must_mention": [],
+      "out_of_scope": true
+    }
+  ]
+}
