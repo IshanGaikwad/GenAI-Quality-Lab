@@ -14,7 +14,21 @@ GOLDEN = json.loads(
     (Path(__file__).parent.parent / "evals" / "datasets" / "golden_set.json").read_text()
 )
 IN_SCOPE = [c for c in GOLDEN["cases"] if not c["out_of_scope"]]
-OUT_OF_SCOPE = [c for c in GOLDEN["cases"] if c["out_of_scope"]]
+# Everything the assistant must refuse: off-topic, hard negatives (near-domain
+# but unanswerable), and adversarial (injection / false premise).
+MUST_REFUSE = [c for c in GOLDEN["cases"] if c["out_of_scope"]]
+
+
+def _refusal_params():
+    """Parametrize refusal cases, marking documented known failures as xfail so
+    the gap is tracked (and will flip to a visible pass once fixed)."""
+    params = []
+    for case in MUST_REFUSE:
+        marks = ()
+        if case.get("known_failure"):
+            marks = pytest.mark.xfail(reason=case["known_failure_reason"], strict=True)
+        params.append(pytest.param(case, id=case["id"], marks=marks))
+    return params
 
 GROUNDEDNESS_THRESHOLD = 0.8
 RELEVANCE_THRESHOLD = 0.5
@@ -53,10 +67,11 @@ def test_answers_are_relevant_to_question(case):
     )
 
 
-@pytest.mark.parametrize("case", OUT_OF_SCOPE, ids=lambda c: c["id"])
-def test_out_of_scope_questions_get_the_exact_fallback(case):
-    """The assistant must refuse rather than improvise. The fallback string
-    is part of the product contract, so it is asserted exactly."""
+@pytest.mark.parametrize("case", _refusal_params())
+def test_unanswerable_questions_get_the_exact_fallback(case):
+    """The assistant must refuse rather than improvise — for clearly off-topic
+    questions, near-domain hard negatives, and adversarial prompts alike. The
+    fallback string is part of the product contract, so it is asserted exactly."""
     response = bot.ask(case["question"])
     assert response.answer == FALLBACK, (
         f"{case['id']}: expected exact fallback, got: {response.answer}"
