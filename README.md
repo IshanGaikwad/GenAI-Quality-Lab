@@ -10,6 +10,7 @@ Built by [Ishan Gaikwad](https://www.linkedin.com/in/ishan-gaikwad-7124927a/) �
 ```
 ✅ Runs fully offline — no API keys, no cost, deterministic results
 ✅ pytest evaluation suite + Robot Framework smoke suite
+✅ 100% line coverage, enforced in CI (build fails below 100%)
 ✅ CI quality gate via GitHub Actions
 ✅ Optional Langfuse tracing hooks (no-op unless configured)
 ```
@@ -59,11 +60,18 @@ pip install -r requirements.txt
 # Evaluation suite
 pytest -v
 
+# ...with coverage, exactly as CI enforces it (fails below 100%)
+pytest --cov=app --cov=evals --cov-report=term-missing --cov-fail-under=100
+
 # Robot Framework smoke suite (business-readable layer)
 robot --pythonpath . --outputdir robot-results robot/
 ```
 
-Both suites also run on every push via `.github/workflows/eval.yml`.
+Both suites also run on every push via `.github/workflows/eval.yml`. The
+pytest step runs under coverage with `--cov-fail-under=100`, so the eval
+layer (`app/`, `evals/`) stays fully exercised — including the
+degenerate-input guards in `tests/test_degenerate_inputs.py` — and any
+uncovered line turns the build red.
 
 ## Design decisions
 
