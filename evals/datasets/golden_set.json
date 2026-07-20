@@ -7,6 +7,7 @@
       "question": "How many PTO days do full-time employees get per year?",
       "expected_doc_ids": ["pto-001"],
       "must_mention": ["20"],
+      "reference_answer": "Full-time employees accrue 20 days of paid time off per year.",
       "out_of_scope": false
     },
     {
@@ -15,6 +16,7 @@
       "question": "Can I carry over unused PTO to next year?",
       "expected_doc_ids": ["pto-001"],
       "must_mention": ["5", "carried over"],
+      "reference_answer": "Unused PTO up to 5 days may be carried over into the next calendar year.",
       "out_of_scope": false
     },
     {
@@ -23,6 +25,7 @@
       "question": "How far in advance must PTO requests be submitted?",
       "expected_doc_ids": ["pto-002"],
       "must_mention": ["10 business days"],
+      "reference_answer": "PTO requests must be submitted at least 10 business days in advance.",
       "out_of_scope": false
     },
     {
@@ -31,6 +34,7 @@
       "question": "Which medical plan includes dental and vision coverage?",
       "expected_doc_ids": ["med-001"],
       "must_mention": ["Premium"],
+      "reference_answer": "The Premium plan includes dental and vision coverage.",
       "out_of_scope": false
     },
     {
@@ -39,6 +43,7 @@
       "question": "As a new hire, how long do I have to enroll in a medical plan?",
       "expected_doc_ids": ["med-002"],
       "must_mention": ["30 days"],
+      "reference_answer": "New hires have 30 days from their start date to enroll in a medical plan.",
       "out_of_scope": false
     },
     {
@@ -47,6 +52,7 @@
       "question": "What is the company 401(k) match percentage?",
       "expected_doc_ids": ["ret-001"],
       "must_mention": ["4%"],
+      "reference_answer": "The company matches 401(k) contributions dollar-for-dollar up to 4% of base salary.",
       "out_of_scope": false
     },
     {
@@ -55,6 +61,7 @@
       "question": "How many days per week can I work remotely?",
       "expected_doc_ids": ["wfh-001"],
       "must_mention": ["3 days"],
+      "reference_answer": "Employees may work remotely up to 3 days per week with manager approval.",
       "out_of_scope": false
     },
 

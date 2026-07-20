@@ -20,6 +20,7 @@ separate, non-blocking stage.
 from __future__ import annotations
 
 import re
+from collections import Counter
 from dataclasses import dataclass
 
 from app.knowledge_base import content_tokens
@@ -73,6 +74,42 @@ def answer_relevance(question: str, answer: str) -> float:
     if not q:
         return 0.0
     return len(q & content_tokens(answer)) / len(q)
+
+
+_ARTICLES = re.compile(r"\b(?:a|an|the)\b")
+_NON_WORD = re.compile(r"[^\w\s]")
+
+
+def _normalize_for_f1(text: str) -> list[str]:
+    """SQuAD-style normalization: lowercase, drop punctuation and articles,
+    then split into a token list (duplicates and order preserved, unlike the
+    stopword-stripped *set* used by the overlap metrics)."""
+    text = _NON_WORD.sub(" ", text.lower())
+    text = _ARTICLES.sub(" ", text)
+    return text.split()
+
+
+def answer_f1(prediction: str, reference: str) -> float:
+    """Token-level F1 between a predicted answer and a reference answer.
+
+    This is answer *correctness* — how closely the produced answer matches a
+    known-good reference — as opposed to groundedness (supported by context) or
+    relevance (addresses the question). It is the standard SQuAD token-F1: the
+    harmonic mean of token precision (how much of the answer is warranted) and
+    recall (how much of the reference is covered), over multisets so repeated
+    tokens count. Range [0, 1].
+    """
+    pred = _normalize_for_f1(prediction)
+    ref = _normalize_for_f1(reference)
+    if not pred or not ref:
+        # F1 is 1.0 only if both are empty; otherwise there is nothing to match.
+        return float(pred == ref)
+    shared = sum((Counter(pred) & Counter(ref)).values())
+    if shared == 0:
+        return 0.0
+    precision = shared / len(pred)
+    recall = shared / len(ref)
+    return 2 * precision * recall / (precision + recall)
 
 
 @dataclass(frozen=True)
