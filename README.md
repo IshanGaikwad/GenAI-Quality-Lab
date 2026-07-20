@@ -83,6 +83,8 @@ uncovered line turns the build red.
 
 **Retrieval and generation are evaluated separately.** Most "hallucinations" in RAG systems are retrieval failures — the model never saw the right document. Splitting the layers localizes the fault.
 
+**Retrieval has a relevance floor, not just a "does it overlap" check.** A document must share at least `MIN_RELEVANCE` (40%) of the query's content tokens to be retrieved. Without it, a single incidental word — "company" appears in nearly every benefits doc — was enough to pull unrelated documents, which let the bot answer out-of-scope questions and pad correct answers with grounded-but-off-topic sentences. The floor was added after running the assistant end-to-end surfaced exactly those two failures; the fix ships with retrieval-layer regression tests (`test_retrieval_quality.py`) that pin all three behaviors. The honest caveat: `0.4` is tuned to this corpus — it sits in the gap between incidental overlap (~0.25–0.33) and genuine matches (≥0.5), and should be revisited as the knowledge base grows. This is also why tokenization is treated as product code: `401(k)` and `401k` must collapse to one token, or a user typing the shorthand silently retrieves nothing.
+
 **The refusal is an exact-string contract.** For out-of-scope questions the bot must return one pinned fallback string. Exact-matching it keeps refusal behavior testable and prevents "helpful" improvisation from creeping in.
 
 **Two suite styles on one eval core.** The pytest suite is the engineering-depth layer; the Robot Framework suite (`robot/`) expresses the same checks in business-readable keywords — the layer stakeholders and manual QA can review. Both call the same `evals/metrics.py`.
