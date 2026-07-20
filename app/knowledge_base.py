@@ -47,16 +47,30 @@ DOCUMENTS: dict[str, str] = {
 
 _WORD = re.compile(r"[a-z0-9']+")
 
+# Parentheses are stripped (not treated as separators) before tokenizing so
+# inline forms like "401(k)" collapse to the same token as "401k". Left as a
+# separator, the regex splits "401(k)" into "401" + "k", which then fails to
+# match a user typing "401k" — a silent retrieval miss.
+_STRIP = re.compile(r"[()]")
+
 _STOPWORDS = frozenset(
     "a an and are as at be by can do does for from has have how i if in is it "
     "may me my of on or our the their they this to up we what when where which "
     "who will with you your".split()
 )
 
+# A document must share at least this fraction of the query's content tokens to
+# be considered relevant. Below it, the overlap is a single incidental word
+# (e.g. "company" appearing in a question it has no real answer to), which would
+# otherwise retrieve unrelated documents and let the bot answer out-of-scope
+# questions or pad a good answer with off-topic sentences.
+MIN_RELEVANCE = 0.4
+
 
 def content_tokens(text: str) -> set[str]:
-    """Lower-cased content-word tokens (stopwords removed)."""
-    return {t for t in _WORD.findall(text.lower()) if t not in _STOPWORDS}
+    """Lower-cased content-word tokens (stopwords and parentheses removed)."""
+    normalized = _STRIP.sub("", text.lower())
+    return {t for t in _WORD.findall(normalized) if t not in _STOPWORDS}
 
 
 @dataclass(frozen=True)
@@ -74,8 +88,8 @@ def retrieve(query: str, top_k: int = 2) -> list[RetrievedDoc]:
     scored = []
     for doc_id, text in DOCUMENTS.items():
         d_tokens = content_tokens(text)
-        overlap = len(q_tokens & d_tokens)
-        if overlap:
-            scored.append(RetrievedDoc(doc_id, text, overlap / len(q_tokens)))
+        score = len(q_tokens & d_tokens) / len(q_tokens)
+        if score >= MIN_RELEVANCE:
+            scored.append(RetrievedDoc(doc_id, text, score))
     scored.sort(key=lambda d: (-d.score, d.doc_id))
     return scored[:top_k]
