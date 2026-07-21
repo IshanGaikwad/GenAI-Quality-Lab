@@ -75,7 +75,7 @@ uncovered line turns the build red.
 
 ## Design decisions
 
-**Deterministic lexical metrics gate CI; LLM-as-judge runs elsewhere.** The metrics here (`evals/metrics.py`) are transparent lexical implementations of the same metric families used by Arize Phoenix, Langfuse, DeepEval, and Ragas. They are free, fast, and reproducible — exactly what a *blocking* CI gate needs. LLM-as-judge metrics add semantic depth but cost money and introduce nondeterminism; in a production pipeline they belong in a separate, non-blocking evaluation stage. This repo models the blocking gate.
+**Deterministic lexical metrics gate CI; LLM-as-judge runs elsewhere.** The metrics here (`evals/metrics.py`) are transparent lexical implementations of the same metric families used by Arize Phoenix, Langfuse, DeepEval, and Ragas. They are free, fast, and reproducible — exactly what a *blocking* CI gate needs. Semantic metrics (embeddings, NLI, LLM-as-judge) add depth but are heavier and introduce nondeterminism; in a production pipeline they belong in a separate, non-blocking evaluation stage. This repo implements **both** — the lexical blocking gate here, and the semantic stage (`semantic_eval/`) described below.
 
 **Coverage is gated at 100%, but coverage is a floor, not the goal.** CI runs pytest under `--cov-fail-under=100`, so any line in `app/` or `evals/` that no test exercises turns the build red. On a deliberately small eval core this is cheap to hold and it forces the degenerate-input branches — empty answers, stopword-only questions, empty retrieval — to be tested rather than assumed, which is exactly where lexical metrics silently misbehave. The honest caveat: 100% line coverage proves every line *ran*, not that every line is *correct* — the behavioral assertions and the seeded-hallucination tests do that work. Coverage keeps the untested-branch count at zero; it is not a substitute for meaningful tests.
 
@@ -89,6 +89,20 @@ uncovered line turns the build red.
 
 **Two suite styles on one eval core.** The pytest suite is the engineering-depth layer; the Robot Framework suite (`robot/`) expresses the same checks in business-readable keywords — the layer stakeholders and manual QA can review. Both call the same `evals/metrics.py`.
 
+## Semantic eval: catching what lexical overlap can't
+
+The lexical metrics above have a correctness ceiling — they measure word overlap, not meaning:
+
+- A **negated claim** ("PTO *cannot* be carried over") shares nearly every token with its source, so lexical groundedness rates it **0.89 and does not flag it** — a false negative.
+- A **faithful paraphrase** shares few tokens, so it is wrongly flagged as a hallucination — a false positive.
+
+[`semantic_eval/`](semantic_eval/) closes that gap with real models, and is the **separate, non-blocking stage** the blocking-gate decision above defers to:
+
+- an **NLI cross-encoder** for entailment-based groundedness that catches **contradiction** — the negated claim above is labelled `contradiction`, and
+- a **bi-encoder** for semantic relevance that credits **paraphrase** — a PTO answer to a "vacation" question scores ~0.40, where lexical relevance scores 0.00.
+
+It deliberately lives outside `evals/` and the 100%-coverage gate: it needs `torch` and downloaded models — the opposite of what a *blocking* gate should be. Its own [workflow](.github/workflows/semantic-eval.yml) reports rather than gates, so the required lexical gate stays fast, offline, and deterministic. Run it with `python -m semantic_eval.run` (details in [`semantic_eval/README.md`](semantic_eval/README.md)). Honest caveat: NLI groundedness is conservative — correct extractive answers often land on `neutral`, so the reliable signal is *contradiction detection*, not the entailment fraction.
+
 ## Optional: observability
 
 `observability/tracing.py` exports each interaction as a scored trace (retrieval span, generation span, eval scores attached) **if** Langfuse credentials are configured — and is a silent no-op otherwise. The suite never depends on a network service.
@@ -96,8 +110,8 @@ uncovered line turns the build red.
 ## Extending this
 
 - Swap `MockLLM` for a real client (any object with `generate(prompt) -> str`) behind an env flag; keep the mock as the CI default.
-- Add semantic metrics (DeepEval `GEval`/faithfulness, Ragas) as a non-blocking second stage.
-- Grow `evals/datasets/golden_set.json` — adversarial phrasings, multilingual cases, boundary questions.
+- Deepen the semantic stage (`semantic_eval/`) — add DeepEval `GEval`/faithfulness, Ragas, or an LLM judge alongside the NLI + embedding metrics already there.
+- Grow `evals/datasets/golden_set.json` — adversarial and hard-negative cases are in; add multilingual and multi-hop questions next.
 - Trend scores over time in Langfuse/Phoenix instead of pass/fail only.
 
 ## License
