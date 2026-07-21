@@ -12,7 +12,7 @@ from pathlib import Path
 import pytest
 
 from app.knowledge_base import retrieve
-from evals.metrics import retrieval_quality
+from evals.metrics import hit_at_k, reciprocal_rank, retrieval_quality
 
 GOLDEN = json.loads(
     (Path(__file__).parent.parent / "evals" / "datasets" / "golden_set.json").read_text()
@@ -33,6 +33,20 @@ def test_expected_documents_are_retrieved(case):
         f"Retriever missed required docs for {case['id']!r}: "
         f"wanted {case['expected_doc_ids']}, got {retrieved_ids}"
     )
+
+
+@pytest.mark.parametrize("case", IN_SCOPE, ids=lambda c: c["id"])
+def test_expected_document_is_ranked_first(case):
+    # Recall alone can't distinguish "right doc ranked first" from "ranked
+    # last". These single-answer questions must put the relevant doc at the top,
+    # so reciprocal rank is 1.0 — a strict tripwire on ranking regressions.
+    ranked = [d.doc_id for d in retrieve(case["question"])]
+    rr = reciprocal_rank(ranked, case["expected_doc_ids"])
+    assert rr == 1.0, (
+        f"{case['id']}: expected doc not ranked first (RR={rr:.2f}); "
+        f"ranked={ranked}, expected={case['expected_doc_ids']}"
+    )
+    assert hit_at_k(ranked, case["expected_doc_ids"], 1) == 1.0
 
 
 @pytest.mark.parametrize("case", OFF_TOPIC, ids=lambda c: c["id"])
@@ -65,3 +79,29 @@ def test_strong_match_does_not_drag_in_a_weakly_related_doc():
     # the answer gets padded with grounded-but-off-topic sentences.
     ids = [d.doc_id for d in retrieve("How much PTO do full-time employees accrue?")]
     assert ids == ["pto-001"]
+
+
+# --- rank-aware metric unit tests: prove the metrics discriminate position,
+# which the (perfectly-ranked) golden set alone cannot demonstrate ---
+
+def test_reciprocal_rank_rewards_earlier_positions():
+    assert reciprocal_rank(["a", "b", "c"], ["a"]) == 1.0
+    assert reciprocal_rank(["a", "b", "c"], ["b"]) == 0.5
+    assert reciprocal_rank(["a", "b", "c"], ["c"]) == pytest.approx(1 / 3)
+
+
+def test_reciprocal_rank_is_zero_when_no_relevant_doc_is_ranked():
+    assert reciprocal_rank(["a", "b"], ["z"]) == 0.0
+    assert reciprocal_rank([], ["a"]) == 0.0
+
+
+def test_hit_at_k_respects_the_cutoff():
+    ranked = ["a", "b", "c"]
+    assert hit_at_k(ranked, ["c"], 3) == 1.0
+    assert hit_at_k(ranked, ["c"], 2) == 0.0  # relevant doc sits below the cutoff
+    assert hit_at_k(ranked, ["a"], 1) == 1.0
+
+
+def test_hit_at_k_rejects_non_positive_k():
+    with pytest.raises(ValueError, match="positive"):
+        hit_at_k(["a"], ["a"], 0)

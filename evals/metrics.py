@@ -129,3 +129,29 @@ def retrieval_quality(
         precision=len(hit) / len(retrieved),
         recall=len(hit) / len(expected) if expected else 1.0,
     )
+
+
+def reciprocal_rank(ranked_ids: list[str], relevant_ids: list[str]) -> float:
+    """Reciprocal of the 1-based rank of the first relevant document; 0.0 if
+    none of the relevant documents appear in the ranked list.
+
+    Rank-aware where precision/recall are not: a relevant document ranked first
+    scores 1.0, ranked second 0.5, ranked third 0.33. Averaged across queries
+    this is MRR — the standard "is the right document near the top?" metric.
+    """
+    relevant = set(relevant_ids)
+    for position, doc_id in enumerate(ranked_ids, start=1):
+        if doc_id in relevant:
+            return 1.0 / position
+    return 0.0
+
+
+def hit_at_k(ranked_ids: list[str], relevant_ids: list[str], k: int) -> float:
+    """1.0 if any relevant document appears in the top ``k`` results, else 0.0.
+
+    The rank-cutoff hit rate: it answers "did the retriever surface a relevant
+    document within the first k?" — the slice a generator actually sees.
+    """
+    if k < 1:
+        raise ValueError("k must be a positive integer")
+    return 1.0 if set(relevant_ids) & set(ranked_ids[:k]) else 0.0
