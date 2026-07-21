@@ -19,6 +19,22 @@ Built by [Ishan Gaikwad](https://www.linkedin.com/in/ishan-gaikwad-7124927a/) â€
 âœ… Optional Langfuse tracing hooks (no-op unless configured)
 ```
 
+## Contents
+
+- [Why this exists](#why-this-exists)
+- [Who this is for](#who-this-is-for)
+- [Architecture](#architecture)
+- [Project structure](#project-structure)
+- [Testing the tests](#the-part-most-eval-demos-skip-testing-the-tests)
+- [Run it](#run-it)
+- [Demo](#demo)
+- [Design decisions](#design-decisions)
+- [Semantic eval stage](#semantic-eval-catching-what-lexical-overlap-cant)
+- [Optional: observability](#optional-observability)
+- [Extending this](#extending-this)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Why this exists
 
 Traditional QA asks *"does the feature work?"* For LLM systems the harder questions are:
