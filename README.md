@@ -3,6 +3,7 @@
 [![AI Quality Gate](https://github.com/IshanGaikwad/GenAI-Quality-Lab/actions/workflows/eval.yml/badge.svg)](https://github.com/IshanGaikwad/GenAI-Quality-Lab/actions/workflows/eval.yml)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/IshanGaikwad/GenAI-Quality-Lab/actions/workflows/eval.yml)
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/IshanGaikwad/GenAI-Quality-Lab)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 > **In plain English:** AI assistants can sound confident and still make things up. This project is the automated safety net that catches that — a worked example of how you *quality-test* an AI system, not just build one. It ships a small assistant that answers employee-benefits questions like *"How much vacation do I get?"* from policy documents, then checks every answer: did it find the right document, is each claim backed by that document, did it invent anything, and does it admit when it doesn't know?
 
