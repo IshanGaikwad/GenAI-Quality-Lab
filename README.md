@@ -16,6 +16,7 @@ Built by [Ishan Gaikwad](https://www.linkedin.com/in/ishan-gaikwad-7124927a/) �
 ✅ pytest evaluation suite + Robot Framework smoke suite
 ✅ 100% line coverage, enforced in CI (build fails below 100%)
 ✅ CI quality gate via GitHub Actions
+✅ Separate semantic eval stage (embeddings + NLI) — non-blocking
 ✅ Optional Langfuse tracing hooks (no-op unless configured)
 ```
 
@@ -42,9 +43,11 @@ Traditional QA asks *"does the feature work?"* For LLM systems the harder questi
 | Question | Metric family | Where in this repo |
 |---|---|---|
 | Did the retriever surface the right documents? | Retrieval precision/recall | `tests/test_retrieval_quality.py` |
+| Is the *right* document ranked first, not just present? | Retrieval ranking (MRR / hit@k) | `tests/test_retrieval_quality.py` |
 | Is every claim in the answer supported by the retrieved context? | Groundedness | `tests/test_groundedness.py` |
 | Which specific claims are fabricated? | Hallucination detection | `tests/test_hallucination.py` |
 | Does the answer actually address the question? | Answer relevance | `tests/test_groundedness.py` |
+| Does the answer match a known-good reference? | Answer correctness (token F1) | `tests/test_correctness.py` |
 | Did someone silently edit the system prompt? | Prompt regression | `tests/test_prompt_regression.py` |
 | Does the bot refuse instead of improvising when it doesn't know? | Refusal contract | both suites |
 
@@ -193,6 +196,8 @@ Every dot is a check that passed. The two `x`s are the *known* weaknesses tracke
 **Answers are graded for correctness, not just groundedness.** Groundedness asks "is it supported by the context?" and `must_mention` asks "is this fact present?" — neither asks "does it match a known-good answer?" SQuAD-style token `answer_f1` against a curated `reference_answer` does, and it immediately caught what the others miss: the extractive system **over-answers**, appending a grounded-but-off-topic second sentence. Four in-scope answers score F1 0.50–0.69 for exactly that reason while groundedness and `must_mention` wave them through; the `F1 ≥ 0.5` floor is the regression trip. (Because `answer_f1` is lexical, it under-credits paraphrase — the semantic stage covers that side.)
 
 **The refusal is an exact-string contract.** For out-of-scope questions the bot must return one pinned fallback string. Exact-matching it keeps refusal behavior testable and prevents "helpful" improvisation from creeping in.
+
+**Adversarial and hard-negative cases probe the edges — and known failures are tracked, not hidden.** Beyond in-scope questions, the golden set includes *hard negatives* (near-domain but unanswerable — "PTO payout on termination", "is the Basic plan free?") and *adversarial* prompts (instruction injection, false premises), all of which must trigger refusal. Two hard negatives the current lexical system fails — it answers "do part-time employees accrue PTO?" with the *full-time* policy — are asserted with `strict` xfail: the test states the *correct* expectation, stays green today, and flips red the moment the system is fixed, forcing the marker's removal. This is why `pytest` reports `2 xfailed`: the gaps are visible and version-controlled, not swept under the rug.
 
 **Two suite styles on one eval core.** The pytest suite is the engineering-depth layer; the Robot Framework suite (`robot/`) expresses the same checks in business-readable keywords — the layer stakeholders and manual QA can review. Both call the same `evals/metrics.py`.
 
