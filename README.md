@@ -56,24 +56,33 @@ A detector that has never seen a failure is itself untested.
 
 ## Run it
 
+**What "using it" means, in plain English:** this isn't an app you log into — it's a quality harness you *run*. You install it, run one command, and watch the automated checks on the demo assistant pass. All you need is Python 3.11+ — no API keys, no accounts, nothing to configure — and it finishes in a few seconds, fully offline.
+
 ```bash
+# 1. Get the code
+git clone https://github.com/IshanGaikwad/GenAI-Quality-Lab.git
+cd GenAI-Quality-Lab
+
+# 2. Install (just pytest + Robot Framework)
 pip install -r requirements.txt
 
-# Evaluation suite
+# 3. Run the checks — expect "78 passed, 2 xfailed"
 pytest -v
+```
 
-# ...with coverage, exactly as CI enforces it (fails below 100%)
+**A green result means every check passed:** the assistant retrieved the right documents, kept its answers grounded in them, refused when it had no answer, and nothing regressed. The `2 xfailed` are *known* weaknesses tracked on purpose (see [Design decisions](#design-decisions)) — not surprises.
+
+More ways to run it:
+
+```bash
+# The exact coverage gate CI enforces (the build fails below 100%)
 pytest --cov=app --cov=evals --cov-report=term-missing --cov-fail-under=100
 
-# Robot Framework smoke suite (business-readable layer)
+# The business-readable Robot Framework smoke suite
 robot --pythonpath . --outputdir robot-results robot/
 ```
 
-Both suites also run on every push via `.github/workflows/eval.yml`. The
-pytest step runs under coverage with `--cov-fail-under=100`, so the eval
-layer (`app/`, `evals/`) stays fully exercised — including the
-degenerate-input guards in `tests/test_degenerate_inputs.py` — and any
-uncovered line turns the build red.
+Both suites also run automatically on every push via `.github/workflows/eval.yml`, so you don't have to remember — a bad change turns the build red before it merges. The heavier **semantic stage is separate and optional** (it needs `torch` and downloaded models); see [its section below](#semantic-eval-catching-what-lexical-overlap-cant).
 
 ## Design decisions
 
