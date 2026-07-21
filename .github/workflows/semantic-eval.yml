@@ -1,0 +1,44 @@
+name: Semantic Eval (non-blocking)
+
+# Deliberately a SEPARATE workflow from "AI Quality Gate". The lexical gate is
+# fast, offline, deterministic, and required. This stage is heavier (torch +
+# downloaded models) and informational — it reports where semantic judgment and
+# lexical overlap disagree, and must never block a merge.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "app/**"
+      - "evals/**"
+      - "semantic_eval/**"
+
+jobs:
+  semantic-eval:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache Hugging Face models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/huggingface
+          key: hf-models-${{ hashFiles('semantic_eval/metrics.py') }}
+
+      - name: Install semantic-stage dependencies
+        run: pip install -r semantic_eval/requirements.txt
+
+      - name: Run semantic evaluation stage
+        run: python -m semantic_eval.run
+
+      - name: Publish semantic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: semantic-eval-report
+          path: semantic_eval/report.json

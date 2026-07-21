@@ -9,3 +9,4 @@ report.html
 output.xml
 .venv/
 .claude/settings.local.json
+semantic_eval/report.json
