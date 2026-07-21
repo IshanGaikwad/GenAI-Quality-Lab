@@ -68,8 +68,13 @@ flowchart LR
     R --> P[Prompt template<br/>with guardrails]
     P --> L[LLM<br/>MockLLM offline / pluggable client]
     L --> A[Answer]
-    A --> E[Evaluation layer<br/>groundedness · hallucination ·<br/>relevance · retrieval quality]
-    E --> G{CI quality gate}
+
+    R -.->|measured by| RE[Retrieval eval<br/>precision · recall · MRR · hit@k]
+    A -.->|measured by| GE[Generation eval<br/>groundedness · hallucination · relevance<br/>answer F1 · refusal · prompt regression]
+    RE --> G{Blocking CI gate<br/>lexical · offline · 100% coverage}
+    GE --> G
+
+    A -.->|also| S[Non-blocking semantic stage<br/>NLI entailment · embedding relevance]
 ```
 
 The system under test is a deliberately small RAG chatbot (`app/`): a keyword-overlap retriever over an employee-benefits knowledge base, a guardrailed prompt template, and a deterministic `MockLLM`. Small on purpose — **the evaluation layer is the point**, and a mock LLM makes the whole suite free, fast, and reproducible in CI.
