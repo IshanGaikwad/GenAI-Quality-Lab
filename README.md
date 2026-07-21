@@ -30,6 +30,15 @@ Traditional QA asks *"does the feature work?"* For LLM systems the harder questi
 | Did someone silently edit the system prompt? | Prompt regression | `tests/test_prompt_regression.py` |
 | Does the bot refuse instead of improvising when it doesn't know? | Refusal contract | both suites |
 
+## Who this is for
+
+- **Hiring managers and reviewers** sizing up AI quality-engineering work — a compact, runnable example of *how* I evaluate GenAI systems, not a slide claiming I can.
+- **Engineers, SDETs, and QA folks new to LLM/RAG testing** — a concrete, offline blueprint you can read in one sitting and run in seconds to watch groundedness, hallucination, retrieval, and prompt-regression checks actually fire.
+- **Teams building a RAG assistant** who need an evaluation pattern to copy — a working shape for a fast blocking CI gate *plus* a separate semantic stage.
+- **Anyone curious** what "testing an AI" really looks like in code, past the buzzwords.
+
+**What it's *not*:** a production chatbot, a library to install, or a finished product. The assistant itself is a deliberately tiny, offline stand-in — the whole point is the evaluation layer wrapped around it.
+
 ## Architecture
 
 ```mermaid
