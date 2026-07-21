@@ -204,6 +204,24 @@ It deliberately lives outside `evals/` and the 100%-coverage gate: it needs `tor
 - Grow `evals/datasets/golden_set.json` — adversarial and hard-negative cases are in; add multilingual and multi-hop questions next.
 - Trend scores over time in Langfuse/Phoenix instead of pass/fail only.
 
+## Contributing
+
+This is primarily a portfolio/demonstration repo — intentionally small and opinionated — but issues, suggestions, and focused PRs are welcome. A few conventions keep contributions consistent with the rest:
+
+- **Keep the gate green.** `pytest --cov=app --cov=evals --cov-fail-under=100` must pass — every line in `app/` and `evals/` stays covered and no test may regress. New behavior comes with tests.
+- **New metrics ship with tests and a rationale.** Add the metric to `evals/metrics.py`, cover every branch, and gate it on the golden set with a *documented* threshold, not a magic number.
+- **Golden-set additions follow the `type` schema** (`in_scope` / `off_topic` / `hard_negative` / `adversarial`). If a case exposes a real weakness the system can't yet meet, mark it `xfail` with a reason rather than weakening a threshold.
+- **Keep the blocking gate fast and offline.** Anything needing `torch`, model downloads, or network access belongs in the separate `semantic_eval/` stage — never in `app/`, `evals/`, or the root `requirements.txt`.
+- **Match the house style:** transparent, readable metric implementations, and document honest caveats rather than hiding them.
+- **Commit messages** use conventional prefixes (`feat:`, `fix:`, `test:`, `docs:`, `chore:`).
+
+Before opening a PR, run the full local check:
+
+```bash
+pytest --cov=app --cov=evals --cov-report=term-missing --cov-fail-under=100
+robot --pythonpath . --outputdir robot-results robot/
+```
+
 ## License
 
 MIT
