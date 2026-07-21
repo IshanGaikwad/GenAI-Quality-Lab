@@ -3,6 +3,8 @@
 [![AI Quality Gate](https://github.com/IshanGaikwad/GenAI-Quality-Lab/actions/workflows/eval.yml/badge.svg)](https://github.com/IshanGaikwad/GenAI-Quality-Lab/actions/workflows/eval.yml)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/IshanGaikwad/GenAI-Quality-Lab/actions/workflows/eval.yml)
 
+> **In plain English:** AI assistants can sound confident and still make things up. This project is the automated safety net that catches that — a worked example of how you *quality-test* an AI system, not just build one. It ships a small assistant that answers employee-benefits questions like *"How much vacation do I get?"* from policy documents, then checks every answer: did it find the right document, is each claim backed by that document, did it invent anything, and does it admit when it doesn't know?
+
 **A working demonstration of how to test a RAG-based GenAI assistant** — retrieval quality, groundedness, hallucination detection, and prompt regression, wired into CI as a quality gate.
 
 Built by [Ishan Gaikwad](https://www.linkedin.com/in/ishan-gaikwad-7124927a/) — AI Quality Engineering Lead. This repo demonstrates, on public tools and an original toy system, the evaluation techniques I use.
