@@ -54,6 +54,43 @@ flowchart LR
 
 The system under test is a deliberately small RAG chatbot (`app/`): a keyword-overlap retriever over an employee-benefits knowledge base, a guardrailed prompt template, and a deterministic `MockLLM`. Small on purpose — **the evaluation layer is the point**, and a mock LLM makes the whole suite free, fast, and reproducible in CI.
 
+## Project structure
+
+```text
+GenAI-Quality-Lab/
+├── app/                       # The system under test — a deliberately tiny RAG chatbot
+│   ├── knowledge_base.py      #   keyword-overlap retriever over an in-memory benefits corpus
+│   └── chatbot.py             #   prompt template, guardrails, and a deterministic MockLLM
+│
+├── evals/                     # The evaluation core — lexical, offline, the point of the repo
+│   ├── metrics.py             #   groundedness · hallucination · relevance · retrieval · F1 · MRR/hit@k
+│   └── datasets/
+│       └── golden_set.json    #   labelled cases: in-scope, off-topic, hard-negative, adversarial
+│
+├── tests/                     # The blocking gate — one pytest suite per metric family
+│   ├── test_retrieval_quality.py   # retrieval recall + rank-aware metrics
+│   ├── test_groundedness.py        # groundedness, must-mention facts, refusal contract
+│   ├── test_hallucination.py       # seeded-failure tests (proves the detector works)
+│   ├── test_correctness.py         # reference-answer token F1
+│   ├── test_prompt_regression.py   # pins the prompt like production config
+│   └── test_degenerate_inputs.py   # empty / stopword-only edge cases
+│
+├── robot/                     # Business-readable smoke suite (Robot Framework, same eval core)
+│
+├── semantic_eval/             # Separate NON-blocking stage — embeddings + NLI (needs torch)
+│   ├── metrics.py             #   bi-encoder relevance + NLI entailment/contradiction
+│   ├── run.py                 #   scores the golden set, writes report.json
+│   └── requirements.txt       #   torch + models, isolated from the gate
+│
+├── observability/tracing.py   # Optional Langfuse trace export (no-op unless configured)
+│
+├── .github/workflows/
+│   ├── eval.yml               # AI Quality Gate — fast, offline, required
+│   └── semantic-eval.yml      # Semantic Eval — heavy, non-blocking, reports only
+│
+└── requirements.txt           # Gate deps only: pytest + Robot Framework (no ML libraries)
+```
+
 ## The part most eval demos skip: testing the tests
 
 `MockLLM(hallucinate=True)` deliberately appends a fabricated claim to otherwise-correct answers. The suite uses it to prove the hallucination detector:
