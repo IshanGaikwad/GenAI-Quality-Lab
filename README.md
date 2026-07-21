@@ -2,6 +2,7 @@
 
 [![AI Quality Gate](https://github.com/IshanGaikwad/GenAI-Quality-Lab/actions/workflows/eval.yml/badge.svg)](https://github.com/IshanGaikwad/GenAI-Quality-Lab/actions/workflows/eval.yml)
 [![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)](https://github.com/IshanGaikwad/GenAI-Quality-Lab/actions/workflows/eval.yml)
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/IshanGaikwad/GenAI-Quality-Lab)
 
 > **In plain English:** AI assistants can sound confident and still make things up. This project is the automated safety net that catches that — a worked example of how you *quality-test* an AI system, not just build one. It ships a small assistant that answers employee-benefits questions like *"How much vacation do I get?"* from policy documents, then checks every answer: did it find the right document, is each claim backed by that document, did it invent anything, and does it admit when it doesn't know?
 
@@ -92,6 +93,34 @@ robot --pythonpath . --outputdir robot-results robot/
 ```
 
 Both suites also run automatically on every push via `.github/workflows/eval.yml`, so you don't have to remember — a bad change turns the build red before it merges. The heavier **semantic stage is separate and optional** (it needs `torch` and downloaded models); see [its section below](#semantic-eval-catching-what-lexical-overlap-cant).
+
+## Demo
+
+There's no UI to screenshot — the "demo" of an evaluation harness is watching its checks pass. Here's an actual run:
+
+```console
+$ pip install -r requirements.txt
+$ pytest --cov=app --cov=evals --cov-report=term-missing
+
+tests/test_correctness.py .............                     [ 16%]
+tests/test_degenerate_inputs.py ......                      [ 23%]
+tests/test_groundedness.py ...........................xx..  [ 62%]
+tests/test_hallucination.py ...                             [ 66%]
+tests/test_prompt_regression.py ....                        [ 71%]
+tests/test_retrieval_quality.py .......................     [100%]
+
+Name                    Stmts   Miss  Cover
+-------------------------------------------
+app/chatbot.py             51      0   100%
+app/knowledge_base.py      28      0   100%
+evals/metrics.py           70      0   100%
+-------------------------------------------
+TOTAL                     149      0   100%
+
+======== 78 passed, 2 xfailed in 0.16s ========
+```
+
+Every dot is a check that passed. The two `x`s are the *known* weaknesses tracked on purpose (see [Design decisions](#design-decisions)) — not failures. Want to try it without installing anything? Hit the **Open in GitHub Codespaces** badge at the top: it launches this repo in a browser-based environment where you can run the commands above with zero local setup.
 
 ## Design decisions
 
