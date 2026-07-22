@@ -9,19 +9,13 @@ updates:
     commit-message:
       prefix: "ci"
 
-  # Root gate dependencies: pytest, pytest-cov, robotframework.
+  # Python dependencies. A single "/" entry covers both requirements.txt at the
+  # root (pytest, pytest-cov, robotframework) and semantic_eval/requirements.txt
+  # (torch, sentence-transformers) — pip discovery recurses, so a second
+  # "/semantic_eval" entry would only produce duplicate PRs.
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "weekly"
-    commit-message:
-      prefix: "chore"
-
-  # Semantic-stage dependencies (torch, sentence-transformers) — heavier and
-  # non-blocking, so checked less often to keep PR noise down.
-  - package-ecosystem: "pip"
-    directory: "/semantic_eval"
-    schedule:
-      interval: "monthly"
     commit-message:
       prefix: "chore"
