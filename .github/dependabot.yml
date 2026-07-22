@@ -1,0 +1,27 @@
+version: 2
+updates:
+  # GitHub Actions in the workflows (checkout, setup-python, cache, upload-artifact).
+  # Keeps action majors current — and clears the recurring Node runtime deprecation.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "ci"
+
+  # Root gate dependencies: pytest, pytest-cov, robotframework.
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    commit-message:
+      prefix: "chore"
+
+  # Semantic-stage dependencies (torch, sentence-transformers) — heavier and
+  # non-blocking, so checked less often to keep PR noise down.
+  - package-ecosystem: "pip"
+    directory: "/semantic_eval"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "chore"
