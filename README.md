@@ -9,7 +9,7 @@
 
 **A working demonstration of how to test a RAG-based GenAI assistant** — retrieval quality, groundedness, hallucination detection, and prompt regression, wired into CI as a quality gate.
 
-Built by [Ishan Gaikwad](https://www.linkedin.com/in/ishan-gaikwad-7124927a/) — AI Quality Engineering Lead. This repo demonstrates, on public tools and an original toy system, the evaluation techniques I use.
+An open-source, offline demonstration of how to evaluate a RAG-based GenAI assistant, built on public tools and an original toy system. Maintained by [Ishan Gaikwad](https://www.linkedin.com/in/ishan-gaikwad-7124927a/); contributions welcome.
 
 ```
 ✅ Runs fully offline — no API keys, no cost, deterministic results
@@ -53,10 +53,9 @@ Traditional QA asks *"does the feature work?"* For LLM systems the harder questi
 
 ## Who this is for
 
-- **Hiring managers and reviewers** sizing up AI quality-engineering work — a compact, runnable example of *how* I evaluate GenAI systems, not a slide claiming I can.
 - **Engineers, SDETs, and QA folks new to LLM/RAG testing** — a concrete, offline blueprint you can read in one sitting and run in seconds to watch groundedness, hallucination, retrieval, and prompt-regression checks actually fire.
-- **Teams building a RAG assistant** who need an evaluation pattern to copy — a working shape for a fast blocking CI gate *plus* a separate semantic stage.
-- **Anyone curious** what "testing an AI" really looks like in code, past the buzzwords.
+- **Teams building a RAG assistant** who need an evaluation pattern to adopt — a working shape for a fast blocking CI gate *plus* a separate semantic stage.
+- **Educators and learners** who want a small, honest, runnable reference for what "testing an AI" really looks like in code, past the buzzwords.
 
 **What it's *not*:** a production chatbot, a library to install, or a finished product. The assistant itself is a deliberately tiny, offline stand-in — the whole point is the evaluation layer wrapped around it.
 
@@ -233,7 +232,7 @@ It deliberately lives outside `evals/` and the 100%-coverage gate: it needs `tor
 
 ## Contributing
 
-This is primarily a portfolio/demonstration repo — intentionally small and opinionated — but issues, suggestions, and focused PRs are welcome. A few conventions keep contributions consistent with the rest:
+This is an open-source demonstration repo — intentionally small and opinionated — and issues, suggestions, and focused PRs are welcome. A few conventions keep contributions consistent with the rest:
 
 - **Keep the gate green.** `pytest --cov=app --cov=evals --cov-fail-under=100` must pass — every line in `app/` and `evals/` stays covered and no test may regress. New behavior comes with tests.
 - **New metrics ship with tests and a rationale.** Add the metric to `evals/metrics.py`, cover every branch, and gate it on the golden set with a *documented* threshold, not a magic number.
