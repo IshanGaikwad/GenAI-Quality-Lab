@@ -15,6 +15,7 @@ An open-source, offline demonstration of how to evaluate a RAG-based GenAI assis
 ✅ Runs fully offline — no API keys, no cost, deterministic results
 ✅ pytest evaluation suite + Robot Framework smoke suite
 ✅ 100% line coverage, enforced in CI (build fails below 100%)
+✅ Mutation-tested (~96.6%) — the tests catch bugs, not just cover lines
 ✅ CI quality gate via GitHub Actions
 ✅ Separate semantic eval stage (embeddings + NLI) — non-blocking
 ✅ Optional observability: scored traces via a pluggable sink (no-op by default)
@@ -96,6 +97,8 @@ GenAI-Quality-Lab/
 │   ├── test_groundedness.py        # groundedness, must-mention facts, refusal contract
 │   ├── test_hallucination.py       # seeded-failure tests (proves the detector works)
 │   ├── test_correctness.py         # reference-answer token F1
+│   ├── test_metric_arithmetic.py   # exact-value tests that pin the formulas (kill mutants)
+│   ├── test_observability.py       # scored-trace export via a sink
 │   ├── test_prompt_regression.py   # pins the prompt like production config
 │   └── test_degenerate_inputs.py   # empty / stopword-only edge cases
 │
@@ -145,7 +148,7 @@ cd GenAI-Quality-Lab
 # 2. Install (just pytest + Robot Framework)
 pip install -r requirements.txt
 
-# 3. Run the checks — expect "78 passed, 2 xfailed"
+# 3. Run the checks — expect "89 passed, 2 xfailed"
 pytest -v
 ```
 
@@ -171,12 +174,13 @@ There's no UI to screenshot — the "demo" of an evaluation harness is watching 
 $ pip install -r requirements.txt
 $ pytest --cov=app --cov=evals --cov=observability --cov-report=term-missing
 
-tests/test_correctness.py .............                     [ 15%]
-tests/test_degenerate_inputs.py ......                      [ 22%]
-tests/test_groundedness.py ...........................xx..  [ 59%]
-tests/test_hallucination.py ...                             [ 63%]
-tests/test_observability.py ....                            [ 67%]
-tests/test_prompt_regression.py ....                        [ 72%]
+tests/test_correctness.py .............                     [ 14%]
+tests/test_degenerate_inputs.py ......                      [ 20%]
+tests/test_groundedness.py ...........................xx..  [ 54%]
+tests/test_hallucination.py ...                             [ 58%]
+tests/test_metric_arithmetic.py .......                     [ 65%]
+tests/test_observability.py ....                            [ 70%]
+tests/test_prompt_regression.py ....                        [ 74%]
 tests/test_retrieval_quality.py .......................     [100%]
 
 Name                       Stmts   Miss  Cover
@@ -188,7 +192,7 @@ observability/tracing.py      15      0   100%
 ----------------------------------------------
 TOTAL                        164      0   100%
 
-======== 82 passed, 2 xfailed in 0.18s ========
+======== 89 passed, 2 xfailed in 0.18s ========
 ```
 
 Every dot is a check that passed. The two `x`s are the *known* weaknesses tracked on purpose (see [Design decisions](#design-decisions)) — not failures. Want to try it without installing anything? Hit the **Open in GitHub Codespaces** badge at the top: it launches this repo in a browser-based environment where you can run the commands above with zero local setup.
@@ -197,7 +201,7 @@ Every dot is a check that passed. The two `x`s are the *known* weaknesses tracke
 
 **Deterministic lexical metrics gate CI; LLM-as-judge runs elsewhere.** The metrics here (`evals/metrics.py`) are transparent lexical implementations of the same metric families used by Arize Phoenix, Langfuse, DeepEval, and Ragas. They are free, fast, and reproducible — exactly what a *blocking* CI gate needs. Semantic metrics (embeddings, NLI, LLM-as-judge) add depth but are heavier and introduce nondeterminism; in a production pipeline they belong in a separate, non-blocking evaluation stage. This repo implements **both** — the lexical blocking gate here, and the semantic stage (`semantic_eval/`) described below.
 
-**Coverage is gated at 100%, but coverage is a floor, not the goal.** CI runs pytest under `--cov-fail-under=100`, so any line in `app/` or `evals/` that no test exercises turns the build red. On a deliberately small eval core this is cheap to hold and it forces the degenerate-input branches — empty answers, stopword-only questions, empty retrieval — to be tested rather than assumed, which is exactly where lexical metrics silently misbehave. The honest caveat: 100% line coverage proves every line *ran*, not that every line is *correct* — the behavioral assertions and the seeded-hallucination tests do that work. Coverage keeps the untested-branch count at zero; it is not a substitute for meaningful tests.
+**Coverage is gated at 100%, but coverage is a floor, not the goal.** CI runs pytest under `--cov-fail-under=100`, so any line in `app/`, `evals/`, or `observability/` that no test exercises turns the build red. On a deliberately small eval core this is cheap to hold and it forces the degenerate-input branches — empty answers, stopword-only questions, empty retrieval — to be tested rather than assumed, which is exactly where lexical metrics silently misbehave. The honest caveat: 100% line coverage proves every line *ran*, not that every line is *correct* — the behavioral assertions and the seeded-hallucination tests do that work. Coverage keeps the untested-branch count at zero; it is not a substitute for meaningful tests.
 
 **Mutation testing proves the tests catch bugs, not just cover lines.** This is the systematic version of the caveat above. 100% coverage guarantees every line *runs* under test; it does not guarantee a test would *fail* if the line were wrong. The non-blocking [Mutation Testing workflow](.github/workflows/mutation.yml) closes that gap: `cosmic-ray` rewrites `evals/metrics.py` one small change at a time (a `/` becomes `^`, a `<` becomes `<=`) and checks the suite kills each mutant. A surviving mutant is a line the tests cover but don't actually verify — a concrete, actionable "write a better assertion here." It found real gaps: the first run left **35 of 269 mutants surviving** because the metric tests asserted *thresholds* (`>= 0.8`) and only exercised the formulas where precision equalled recall, so operator swaps that are no-ops at symmetric inputs slipped through. Adding exact-value assertions on asymmetric inputs (`tests/test_metric_arithmetic.py`) killed 26 of them, taking the score to **~96.6% (9 surviving)**. The remaining survivors are equivalent mutants — e.g. in `if not pred or not ref`, swapping `or`→`and` still returns `0.0` via the next guard, so no input distinguishes it. Chasing 100% there means contrived tests, so this is the deliberate stopping point. It runs separately because it rewrites files in place and takes minutes: the opposite of a fast blocking gate.
 
