@@ -1,5 +1,7 @@
-"""Generation-layer evaluation: every answer must be grounded in the
-retrieved context, and must contain the facts the golden set requires.
+"""Generation-layer evaluation. For in-scope questions an answer must be
+grounded in the retrieved context, contain the facts the golden set requires,
+and stay relevant to the question. For unanswerable questions — off-topic, hard
+negatives, and adversarial prompts — it must return the exact refusal string.
 """
 
 import json
