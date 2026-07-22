@@ -19,3 +19,8 @@ updates:
       interval: "weekly"
     commit-message:
       prefix: "chore"
+    ignore:
+      # numpy 2.5+ requires Python >=3.12; CI runs 3.11. Re-allow when the
+      # workflows move to 3.12+.
+      - dependency-name: "numpy"
+        versions: [">=2.5.0"]
