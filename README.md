@@ -9,7 +9,7 @@
 
 **A working demonstration of how to test a RAG-based GenAI assistant** — retrieval quality, groundedness, hallucination detection, and prompt regression, wired into CI as a quality gate.
 
-An open-source, offline demonstration of how to evaluate a RAG-based GenAI assistant, built on public tools and an original toy system. Maintained by [Ishan Gaikwad](https://www.linkedin.com/in/ishan-gaikwad-7124927a/); contributions welcome.
+An open-source, offline demonstration of how to evaluate a RAG-based GenAI assistant, built on public tools and an original toy system. Maintained by [Ishan Gaikwad](https://github.com/IshanGaikwad); contributions welcome.
 
 ```
 ✅ Runs fully offline — no API keys, no cost, deterministic results
