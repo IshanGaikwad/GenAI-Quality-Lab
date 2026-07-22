@@ -13,16 +13,12 @@ Usage:  python -m semantic_eval.run
 from __future__ import annotations
 
 import json
+from collections import Counter
 from pathlib import Path
 
 from app.chatbot import RagChatbot
 from evals.metrics import answer_relevance, detect_hallucinations, groundedness
-from collections import Counter
-
-from semantic_eval.metrics import (
-    entailment_report,
-    semantic_relevance,
-)
+from semantic_eval.metrics import entailment_report, semantic_relevance
 
 ROOT = Path(__file__).resolve().parent.parent
 GOLDEN = json.loads((ROOT / "evals" / "datasets" / "golden_set.json").read_text())
