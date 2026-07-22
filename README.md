@@ -113,9 +113,12 @@ GenAI-Quality-Lab/
 │
 ├── docs/social-preview.png    # GitHub social-preview card (upload via Settings)
 │
+├── cosmic-ray.toml            # Mutation-testing config (targets evals/metrics.py)
+│
 ├── .github/workflows/
 │   ├── eval.yml               # AI Quality Gate — fast, offline, required
-│   └── semantic-eval.yml      # Semantic Eval — heavy, non-blocking, reports only
+│   ├── semantic-eval.yml      # Semantic Eval — heavy, non-blocking, reports only
+│   └── mutation.yml           # Mutation Testing — non-blocking, "tests the tests"
 │
 └── requirements.txt           # Gate deps only: pytest + Robot Framework (no ML libraries)
 ```
@@ -195,6 +198,8 @@ Every dot is a check that passed. The two `x`s are the *known* weaknesses tracke
 **Deterministic lexical metrics gate CI; LLM-as-judge runs elsewhere.** The metrics here (`evals/metrics.py`) are transparent lexical implementations of the same metric families used by Arize Phoenix, Langfuse, DeepEval, and Ragas. They are free, fast, and reproducible — exactly what a *blocking* CI gate needs. Semantic metrics (embeddings, NLI, LLM-as-judge) add depth but are heavier and introduce nondeterminism; in a production pipeline they belong in a separate, non-blocking evaluation stage. This repo implements **both** — the lexical blocking gate here, and the semantic stage (`semantic_eval/`) described below.
 
 **Coverage is gated at 100%, but coverage is a floor, not the goal.** CI runs pytest under `--cov-fail-under=100`, so any line in `app/` or `evals/` that no test exercises turns the build red. On a deliberately small eval core this is cheap to hold and it forces the degenerate-input branches — empty answers, stopword-only questions, empty retrieval — to be tested rather than assumed, which is exactly where lexical metrics silently misbehave. The honest caveat: 100% line coverage proves every line *ran*, not that every line is *correct* — the behavioral assertions and the seeded-hallucination tests do that work. Coverage keeps the untested-branch count at zero; it is not a substitute for meaningful tests.
+
+**Mutation testing proves the tests catch bugs, not just cover lines.** This is the systematic version of the caveat above. 100% coverage guarantees every line *runs* under test; it does not guarantee a test would *fail* if the line were wrong. The non-blocking [Mutation Testing workflow](.github/workflows/mutation.yml) closes that gap: `cosmic-ray` rewrites `evals/metrics.py` one small change at a time (a `/` becomes `^`, a `<` becomes `<=`) and checks the suite kills each mutant. A surviving mutant is a line the tests cover but don't actually verify — a concrete, actionable "write a better assertion here." It runs separately because it rewrites files in place and takes minutes: the opposite of a fast blocking gate.
 
 **The prompt is tested like production config.** A reworded guardrail changes model behavior exactly like an untested code change. `test_prompt_regression.py` pins the guardrail clauses, the fallback string, and the context-before-question structure, so any prompt edit fails CI and forces deliberate review.
 

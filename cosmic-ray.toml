@@ -1,0 +1,18 @@
+# Mutation-testing config for the non-blocking Mutation Testing stage
+# (.github/workflows/mutation.yml).
+#
+# It mutates the core metric implementations one small change at a time and
+# checks that the test suite KILLS each mutant — "testing the tests" one level
+# deeper than 100% line coverage. A surviving mutant is a line the tests cover
+# but don't actually verify.
+#
+# NOTE: cosmic-ray rewrites files IN PLACE, so it must run only on an ephemeral
+# CI checkout, never as part of local development.
+[cosmic-ray]
+module-path = "evals/metrics.py"
+timeout = 30.0
+excluded-modules = []
+test-command = "python -m pytest -q -x"
+
+[cosmic-ray.distributor]
+name = "local"

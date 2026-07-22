@@ -1,0 +1,42 @@
+name: Mutation Testing (non-blocking)
+
+# Separate, non-blocking stage. 100% line coverage proves every line *runs*
+# under test; mutation testing proves the tests actually FAIL when the code is
+# wrong. cosmic-ray rewrites evals/metrics.py one small change at a time and
+# checks the suite kills each mutant. It rewrites files in place, which is safe
+# here because the CI checkout is ephemeral and discarded after the run — and it
+# takes minutes, the opposite of the fast required gate, so it never blocks.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "evals/metrics.py"
+      - "cosmic-ray.toml"
+      - ".github/workflows/mutation.yml"
+
+jobs:
+  mutation:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt cosmic-ray
+
+      - name: Run mutation testing (evals/metrics.py)
+        run: |
+          cosmic-ray init cosmic-ray.toml mutation.sqlite
+          cosmic-ray exec cosmic-ray.toml mutation.sqlite
+
+      - name: Report mutation results
+        if: always()
+        run: |
+          cr-report mutation.sqlite
+          echo "=== survival rate (lower is better) ==="
+          cr-rate mutation.sqlite
