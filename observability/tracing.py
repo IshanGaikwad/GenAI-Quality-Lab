@@ -23,7 +23,12 @@ TraceSink = Callable[[dict], None]
 
 
 def score_response(response) -> dict[str, float | bool]:
-    """Attach the same eval scores the CI gate uses to a chatbot response."""
+    """The reference-free, per-answer eval scores for a response.
+
+    Groundedness, relevance, and hallucination are the gate metrics computable at
+    inference time; F1 and ranking are omitted because they need a golden
+    reference / expected docs, which a live interaction doesn't have.
+    """
     context = response.context_text
     return {
         "groundedness": round(groundedness(response.answer, context), 3),
