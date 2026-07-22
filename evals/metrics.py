@@ -1,20 +1,23 @@
-"""Deterministic, reference-free evaluation metrics for RAG outputs.
+"""Deterministic evaluation metrics for RAG outputs.
 
-These are transparent lexical implementations of the same metric families
-used by LLM-evaluation platforms (Arize Phoenix, Langfuse, DeepEval, Ragas):
+Transparent lexical implementations of the same metric families used by
+LLM-evaluation platforms (Arize Phoenix, Langfuse, DeepEval, Ragas):
 
 - groundedness: is each claim in the answer supported by the retrieved
   context?
 - hallucination detection: which claims are NOT supported?
 - answer relevance: does the answer address the question?
-- retrieval quality: did the retriever surface the documents a human would
-  consider necessary?
+- answer correctness: does the answer match a known-good reference? (token F1)
+- retrieval quality: precision/recall plus rank-awareness (reciprocal rank →
+  MRR, hit@k) — did the retriever surface the right documents, near the top?
 
-Deterministic lexical metrics are deliberately chosen for the CI gate:
-they are free, fast, and reproducible. LLM-as-judge metrics (see the
-optional DeepEval integration in the README) add semantic depth but cost
-money and introduce nondeterminism — in a real pipeline they run in a
-separate, non-blocking stage.
+Most are reference-free; ``answer_f1`` is the exception — it compares the answer
+against a reference answer.
+
+Deterministic lexical metrics are deliberately chosen for the CI gate: they are
+free, fast, and reproducible. Semantic metrics (embeddings, NLI, LLM-as-judge)
+add depth but cost more and introduce nondeterminism — they run in the separate,
+non-blocking ``semantic_eval/`` stage.
 """
 
 from __future__ import annotations
