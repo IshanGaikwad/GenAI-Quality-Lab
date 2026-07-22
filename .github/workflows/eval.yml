@@ -19,7 +19,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Pytest evaluation suite (retrieval, groundedness, hallucination, prompt regression)
-        run: pytest -v --cov=app --cov=evals --cov-report=term-missing --cov-fail-under=100
+        run: pytest -v --cov=app --cov=evals --cov=observability --cov-report=term-missing --cov-fail-under=100
 
       - name: Robot Framework smoke suite
         run: robot --pythonpath . --outputdir robot-results robot/

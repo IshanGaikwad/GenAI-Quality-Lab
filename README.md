@@ -17,7 +17,7 @@ An open-source, offline demonstration of how to evaluate a RAG-based GenAI assis
 ✅ 100% line coverage, enforced in CI (build fails below 100%)
 ✅ CI quality gate via GitHub Actions
 ✅ Separate semantic eval stage (embeddings + NLI) — non-blocking
-✅ Optional Langfuse tracing hooks (no-op unless configured)
+✅ Optional observability: scored traces via a pluggable sink (no-op by default)
 ```
 
 ## Contents
@@ -106,7 +106,7 @@ GenAI-Quality-Lab/
 │   ├── run.py                 #   scores the golden set, writes report.json
 │   └── requirements.txt       #   torch + models, isolated from the gate
 │
-├── observability/tracing.py   # Optional Langfuse trace export (no-op unless configured)
+├── observability/tracing.py   # Optional scored-trace export via a sink (no-op by default)
 │
 ├── scripts/
 │   └── make_social_preview.py # regenerates docs/social-preview.png (Pillow)
@@ -152,7 +152,7 @@ More ways to run it:
 
 ```bash
 # The exact coverage gate CI enforces (the build fails below 100%)
-pytest --cov=app --cov=evals --cov-report=term-missing --cov-fail-under=100
+pytest --cov=app --cov=evals --cov=observability --cov-report=term-missing --cov-fail-under=100
 
 # The business-readable Robot Framework smoke suite
 robot --pythonpath . --outputdir robot-results robot/
@@ -166,24 +166,26 @@ There's no UI to screenshot — the "demo" of an evaluation harness is watching 
 
 ```console
 $ pip install -r requirements.txt
-$ pytest --cov=app --cov=evals --cov-report=term-missing
+$ pytest --cov=app --cov=evals --cov=observability --cov-report=term-missing
 
-tests/test_correctness.py .............                     [ 16%]
-tests/test_degenerate_inputs.py ......                      [ 23%]
-tests/test_groundedness.py ...........................xx..  [ 62%]
-tests/test_hallucination.py ...                             [ 66%]
-tests/test_prompt_regression.py ....                        [ 71%]
+tests/test_correctness.py .............                     [ 15%]
+tests/test_degenerate_inputs.py ......                      [ 22%]
+tests/test_groundedness.py ...........................xx..  [ 59%]
+tests/test_hallucination.py ...                             [ 63%]
+tests/test_observability.py ....                            [ 67%]
+tests/test_prompt_regression.py ....                        [ 72%]
 tests/test_retrieval_quality.py .......................     [100%]
 
-Name                    Stmts   Miss  Cover
--------------------------------------------
-app/chatbot.py             51      0   100%
-app/knowledge_base.py      28      0   100%
-evals/metrics.py           70      0   100%
--------------------------------------------
-TOTAL                     149      0   100%
+Name                       Stmts   Miss  Cover
+----------------------------------------------
+app/chatbot.py                51      0   100%
+app/knowledge_base.py         28      0   100%
+evals/metrics.py              70      0   100%
+observability/tracing.py      15      0   100%
+----------------------------------------------
+TOTAL                        164      0   100%
 
-======== 78 passed, 2 xfailed in 0.16s ========
+======== 82 passed, 2 xfailed in 0.18s ========
 ```
 
 Every dot is a check that passed. The two `x`s are the *known* weaknesses tracked on purpose (see [Design decisions](#design-decisions)) — not failures. Want to try it without installing anything? Hit the **Open in GitHub Codespaces** badge at the top: it launches this repo in a browser-based environment where you can run the commands above with zero local setup.
@@ -226,7 +228,18 @@ It deliberately lives outside `evals/` and the 100%-coverage gate: it needs `tor
 
 ## Optional: observability
 
-`observability/tracing.py` exports each interaction as a scored trace (retrieval span, generation span, eval scores attached) **if** Langfuse credentials are configured — and is a silent no-op otherwise. The suite never depends on a network service.
+`observability/tracing.py` scores every interaction with the same metrics the gate uses and builds a serializable trace (retrieval span, generation span, eval scores attached). It is **SDK-agnostic**: pass a `sink` to export the trace anywhere; with no sink it is a pure offline no-op, so the suite never touches the network.
+
+```python
+from observability.tracing import traced_ask
+
+def sink(trace):        # wire your backend here — Langfuse, Arize Phoenix, your own store
+    ...                 # trace = {name, input, output, spans, scores}
+
+response, scores = traced_ask(bot, "How many PTO days do I get?", sink=sink)
+```
+
+The module itself is tested and inside the 100% coverage gate; the backend adapter is yours to wire, so no specific (and version-churning) SDK is baked into the repo.
 
 ## Extending this
 
@@ -239,7 +252,7 @@ It deliberately lives outside `evals/` and the 100%-coverage gate: it needs `tor
 
 This is an open-source demonstration repo — intentionally small and opinionated — and issues, suggestions, and focused PRs are welcome. A few conventions keep contributions consistent with the rest:
 
-- **Keep the gate green.** `pytest --cov=app --cov=evals --cov-fail-under=100` must pass — every line in `app/` and `evals/` stays covered and no test may regress. New behavior comes with tests.
+- **Keep the gate green.** `pytest --cov=app --cov=evals --cov=observability --cov-fail-under=100` must pass — every line in `app/`, `evals/`, and `observability/` stays covered and no test may regress. New behavior comes with tests.
 - **New metrics ship with tests and a rationale.** Add the metric to `evals/metrics.py`, cover every branch, and gate it on the golden set with a *documented* threshold, not a magic number.
 - **Golden-set additions follow the `type` schema** (`in_scope` / `off_topic` / `hard_negative` / `adversarial`). If a case exposes a real weakness the system can't yet meet, mark it `xfail` with a reason rather than weakening a threshold.
 - **Keep the blocking gate fast and offline.** Anything needing `torch`, model downloads, or network access belongs in the separate `semantic_eval/` stage — never in `app/`, `evals/`, or the root `requirements.txt`.
@@ -249,7 +262,7 @@ This is an open-source demonstration repo — intentionally small and opinionate
 Before opening a PR, run the full local check:
 
 ```bash
-pytest --cov=app --cov=evals --cov-report=term-missing --cov-fail-under=100
+pytest --cov=app --cov=evals --cov=observability --cov-report=term-missing --cov-fail-under=100
 robot --pythonpath . --outputdir robot-results robot/
 ```
 
