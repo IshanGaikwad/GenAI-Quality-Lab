@@ -13,6 +13,7 @@ on:
     branches: [main]
     paths:
       - "evals/metrics.py"
+      - "tests/**"
       - "cosmic-ray.toml"
       - ".github/workflows/mutation.yml"
 
