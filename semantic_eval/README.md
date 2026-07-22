@@ -29,8 +29,10 @@ top-level README describes.
 
 ## Run it
 
+From the repo root (a separate virtualenv is recommended — this pulls in `torch`):
+
 ```bash
-pip install -r semantic_eval/requirements.txt   # torch + models, ~separate env
+pip install -r semantic_eval/requirements.txt   # torch + sentence-transformers
 python -m semantic_eval.run                      # prints a scorecard, writes report.json
 ```
 
