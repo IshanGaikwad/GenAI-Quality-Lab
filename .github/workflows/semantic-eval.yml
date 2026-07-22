@@ -13,6 +13,7 @@ on:
       - "app/**"
       - "evals/**"
       - "semantic_eval/**"
+      - "!**/*.md"   # docs shouldn't trigger a heavy torch + model-download run
 
 jobs:
   semantic-eval:
