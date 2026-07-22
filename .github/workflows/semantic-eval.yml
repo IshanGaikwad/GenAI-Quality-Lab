@@ -29,7 +29,11 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.cache/huggingface
-          key: hf-models-${{ hashFiles('semantic_eval/metrics.py') }}
+          # Keyed on the model names, not the file hash — so editing metrics.py
+          # (a comment, a helper) no longer forces a ~420 MB model re-download.
+          # Bump the suffix when BI_ENCODER_MODEL / NLI_MODEL in
+          # semantic_eval/metrics.py change.
+          key: hf-models-all-minilm-l6-v2-nli-distilroberta-base
 
       - name: Install semantic-stage dependencies
         run: pip install -r semantic_eval/requirements.txt
