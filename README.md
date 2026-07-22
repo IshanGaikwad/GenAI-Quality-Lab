@@ -108,6 +108,11 @@ GenAI-Quality-Lab/
 │
 ├── observability/tracing.py   # Optional Langfuse trace export (no-op unless configured)
 │
+├── scripts/
+│   └── make_social_preview.py # regenerates docs/social-preview.png (Pillow)
+│
+├── docs/social-preview.png    # GitHub social-preview card (upload via Settings)
+│
 ├── .github/workflows/
 │   ├── eval.yml               # AI Quality Gate — fast, offline, required
 │   └── semantic-eval.yml      # Semantic Eval — heavy, non-blocking, reports only
